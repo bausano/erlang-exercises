@@ -4,7 +4,7 @@
 
 -module(set).
 
--export([new/0, new/1, add/2, del/2,
+-export([new/0, new/1, add/2, del/2, append/2,
 		 contains/2, empty/1,
 		 union/2, intersection/2]).
 
@@ -14,14 +14,20 @@
 %% Element that can be placed into a set.
 -type el() :: any().
 
-%% @param el 	Set will be created from given argument. List is transforment into a set.
+%% @param set	Set we want to append to
+%% @param any	Element we want to append. List is treated as element.
+- spec append(set(), any()) -> set().
+
+%% @param el 	Set will be created from given argument.
+%%						If list is given, a union of that list with set is returned.
 -spec new(el()) -> set().
 
 %% Returns empty set.
 -spec new() -> set().
 
 %% @param set	Set given elements should be put into.
-%% @param el 	Element to be put into a set. List is transformed into a set.
+%% @param el 	Element to be put into a set.
+%%						If list is given, a union of that list with set is returned.
 -spec add(set(), el()) -> set().
 
 %% @param set	Set given element should be removed from.
@@ -45,24 +51,15 @@
 %% @param set
 - spec intersection(set(), set()) -> set().
 
-%% <private function join/3>
-%% Appends given element to the set if it's unique.
-%% @param set	Set to check for uniqueness in.
-%% @param set	Set to loop though. Can be same as arg #1.
-%% @param el 	Element to append.
-%%
-%% @return set	Set with appended element.
+%% <function append/2>
+%% If element is not found, add it to the tail.
+append([], El) -> [El];
 
-join(Set, [], El) ->
-	case contains(Set, El) of
-		true -> [];
-		%% If element is unique, appends it to the tail of set.
-		false -> [El]
-	end;
+%% If set already contains this element, break the loop.
+append(Set = [El | _], El) -> Set;
 
-%% Loops though second set until it hits its tail.
-join(Set, [First | Tail], El) ->
-	[ First | join(Set, Tail, El) ].
+append([First | Tail], El) ->
+	[ First | append(Tail, El) ].
 %% </endfunction>
 
 %% <function add/2>
@@ -70,10 +67,10 @@ join(Set, [First | Tail], El) ->
 add(Set, []) -> Set;
 
 add(Set, [First | Tail]) ->
-	New = join(Set, Set, First),
+	New = append(Set, First),
 	add(New, Tail);
 
-%% If given element is not list, make it one.
+%% If given element is not list, make it one and go to second statement.
 add(Set, El) ->
 	add(Set, [El]).
 %% </endfunction>
@@ -108,8 +105,7 @@ contains([_Any | Tail], El) ->
 %% <function del/2>
 del([], _El) -> [];
 
-del([El | Tail], El) ->
-	del(Tail, El);
+del([El | Tail], El) -> Tail;
 
 del([First | Tail], El) ->
 	[ First | del(Tail, El) ].
